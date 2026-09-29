@@ -22,6 +22,12 @@ export function Reservas() {
     const [processando, setProcessando] = useState(false);
     const [carregando, setCarregando] = useState(true);
 
+    const [buscaHospede, setBuscaHospede] = useState("");
+    const [buscaQuarto, setBuscaQuarto] = useState("");
+    const [buscaCheckin, setBuscaCheckin] = useState("");
+    const [buscaCheckout, setBuscaCheckout] = useState("");
+    const [filtro, setFiltro] = useState({ hospede: "", quarto: "", checkin: "", checkout: "" });
+
     function carregar() {
         setCarregando(true);
         Promise.all([api.listarReservas(), api.listarQuartos(), api.listarHospedes()])
@@ -100,6 +106,11 @@ export function Reservas() {
         }
     }
 
+    function pesquisar(e: React.FormEvent) {
+        e.preventDefault();
+        setFiltro({ hospede: buscaHospede, quarto: buscaQuarto, checkin: buscaCheckin, checkout: buscaCheckout });
+    }
+
     function formatarData(data: string) {
         const [ano, mes, dia] = data.slice(0, 10).split("-");
         return ano && mes && dia ? `${dia}/${mes}/${ano}` : data;
@@ -108,6 +119,17 @@ export function Reservas() {
     const reservasOrdenadas = [...reservas].sort((a, b) => b.data_checkin.localeCompare(a.data_checkin));
     const quartosOrdenados = [...quartos].sort((a, b) => a.numero.localeCompare(b.numero, "pt-BR", { numeric: true }));
     const hospedesOrdenados = [...hospedes].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+
+    const hospedeFiltro = filtro.hospede.trim().toLocaleLowerCase("pt-BR");
+    const quartoFiltro = filtro.quarto.trim().toLocaleLowerCase("pt-BR");
+    const filtroAtivo = Boolean(filtro.hospede || filtro.quarto || filtro.checkin || filtro.checkout);
+    const reservasFiltradas = reservasOrdenadas.filter(
+        (r) =>
+            (!hospedeFiltro || r.hospede_nome.toLocaleLowerCase("pt-BR").includes(hospedeFiltro)) &&
+            (!quartoFiltro || r.quarto_numero.toLocaleLowerCase("pt-BR").includes(quartoFiltro)) &&
+            (!filtro.checkin || r.data_checkin.slice(0, 10) === filtro.checkin) &&
+            (!filtro.checkout || r.data_checkout?.slice(0, 10) === filtro.checkout)
+    );
 
     return (
         <div className="space-y-8">
@@ -167,6 +189,52 @@ export function Reservas() {
             <Erro mensagem={erro} />
             <Sucesso mensagem={sucesso} />
 
+            <form onSubmit={pesquisar} className="bg-white border border-ink/10 rounded-sm p-5 flex gap-3 flex-wrap items-end">
+                <label className="flex-1 min-w-[160px]">
+                    <span className="block text-xs text-ink/50 mb-1">Hóspede</span>
+                    <input
+                        className="border border-ink/15 rounded-sm px-3 py-2 w-full focus:outline-none focus:border-teal"
+                        placeholder="Nome do hóspede"
+                        value={buscaHospede}
+                        onChange={(e) => setBuscaHospede(e.target.value)}
+                    />
+                </label>
+
+                <label className="flex-1 min-w-[160px]">
+                    <span className="block text-xs text-ink/50 mb-1">Quarto</span>
+                    <input
+                        className="border border-ink/15 rounded-sm px-3 py-2 w-full focus:outline-none focus:border-teal"
+                        placeholder="Número do quarto"
+                        value={buscaQuarto}
+                        onChange={(e) => setBuscaQuarto(e.target.value)}
+                    />
+                </label>
+
+                <label className="min-w-[160px]">
+                    <span className="block text-xs text-ink/50 mb-1">Check-in</span>
+                    <input
+                        type="date"
+                        className="border border-ink/15 rounded-sm px-3 py-2 w-full focus:outline-none focus:border-teal"
+                        value={buscaCheckin}
+                        onChange={(e) => setBuscaCheckin(e.target.value)}
+                    />
+                </label>
+
+                <label className="min-w-[160px]">
+                    <span className="block text-xs text-ink/50 mb-1">Check-out</span>
+                    <input
+                        type="date"
+                        className="border border-ink/15 rounded-sm px-3 py-2 w-full focus:outline-none focus:border-teal"
+                        value={buscaCheckout}
+                        onChange={(e) => setBuscaCheckout(e.target.value)}
+                    />
+                </label>
+
+                <button className="bg-ink text-white px-5 py-2 rounded-sm hover:bg-ink/80 transition-colors" type="submit">
+                    Pesquisar
+                </button>
+            </form>
+
             <div className="bg-white border border-ink/10 rounded-sm overflow-x-auto">
                 <table className="w-full text-sm">
                     <thead>
@@ -179,7 +247,7 @@ export function Reservas() {
                         </tr>
                     </thead>
                     <tbody>
-                        {reservasOrdenadas.map((r) => (
+                        {reservasFiltradas.map((r) => (
                             <tr key={r.id} className="border-b border-ink/5 last:border-0">
                                 <td className="py-3 px-4">Quarto {r.quarto_numero}</td>
                                 <td className="py-3 px-4">{r.hospede_nome}</td>
@@ -210,10 +278,10 @@ export function Reservas() {
                                 </td>
                             </tr>
                         ))}
-                        {!carregando && reservas.length === 0 && (
+                        {!carregando && reservasFiltradas.length === 0 && (
                             <tr>
                                 <td className="py-4 px-4 text-ink/50" colSpan={5}>
-                                    Nenhuma reserva criada ainda.
+                                    {filtroAtivo ? "Nenhuma reserva encontrada para essa busca." : "Nenhuma reserva criada ainda."}
                                 </td>
                             </tr>
                         )}
