@@ -45,6 +45,7 @@ export function Home({ onNavigate }: { onNavigate: (p: Pagina) => void }) {
                         ["Hóspedes", hospedes.length],
                         ["Reservas", reservas.length],
                         ["Quartos ocupados", ocupados],
+                        ["Quartos livres", livres],
                     ].map(([titulo, valor]) => (
                         <div key={titulo} className="bg-white border border-ink/10 rounded-sm p-5">
                             <p className="text-sm text-ink/55">{titulo}</p>
