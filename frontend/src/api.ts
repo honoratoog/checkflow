@@ -53,6 +53,9 @@ export const api = {
     listarHospedes: (): Promise<Hospede[]> => request("/hospedes"),
     criarHospede: (nome: string, documento: string, telefone: string) =>
         request("/hospedes", { method: "POST", body: JSON.stringify({ nome, documento, telefone }) }),
+    // Rota ainda não implementada no backend (débito técnico registrado no Handoff).
+    editarHospede: (id: number, nome: string, documento: string, telefone: string) =>
+        request(`/hospedes/${id}`, { method: "PUT", body: JSON.stringify({ nome, documento, telefone }) }),
     excluirHospede: (id: number) => request(`/hospedes/${id}`, { method: "DELETE" }),
 
     listarReservas: (): Promise<Reserva[]> => request("/reservas"),
