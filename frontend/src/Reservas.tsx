@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api, Quarto, Hospede, Reserva } from "./api";
 import { Erro } from "./Erro";
 import { Sucesso } from "./Sucesso";
+import { Lookup } from "./Lookup";
 
 const estiloStatusReserva: Record<Reserva["status"], string> = {
     Reservado: "bg-ink/5 text-ink/70",
@@ -21,6 +22,7 @@ export function Reservas() {
     const [sucesso, setSucesso] = useState("");
     const [processando, setProcessando] = useState(false);
     const [carregando, setCarregando] = useState(true);
+    const [formularioKey, setFormularioKey] = useState(0);
 
     function carregar() {
         setCarregando(true);
@@ -50,6 +52,7 @@ export function Reservas() {
             setQuartoId("");
             setHospedeId("");
             setDataCheckin("");
+            setFormularioKey((k) => k + 1);
             setSucesso("Reserva criada com sucesso.");
             carregar();
         } catch (err: any) {
@@ -119,34 +122,28 @@ export function Reservas() {
             <form onSubmit={criarReserva} className="bg-white border border-ink/10 rounded-sm p-5 flex gap-3 flex-wrap items-end">
                 <label className="flex-1 min-w-[160px]">
                     <span className="block text-xs text-ink/50 mb-1">Quarto</span>
-                    <select
-                        className="border border-ink/15 rounded-sm px-3 py-2 w-full focus:outline-none focus:border-teal"
+                    <Lookup
+                        key={`quarto-${formularioKey}`}
+                        items={quartosOrdenados}
                         value={quartoId}
-                        onChange={(e) => setQuartoId(e.target.value)}
-                    >
-                        <option value="">Selecione</option>
-                        {quartosOrdenados.map((q) => (
-                            <option key={q.id} value={q.id}>
-                                Quarto {q.numero} — {q.tipo} — {q.status}
-                            </option>
-                        ))}
-                    </select>
+                        onChange={setQuartoId}
+                        getId={(q) => q.id}
+                        getLabel={(q) => `Quarto ${q.numero} — ${q.tipo} — ${q.status}`}
+                        placeholder="Buscar quarto"
+                    />
                 </label>
 
                 <label className="flex-1 min-w-[160px]">
                     <span className="block text-xs text-ink/50 mb-1">Hóspede</span>
-                    <select
-                        className="border border-ink/15 rounded-sm px-3 py-2 w-full focus:outline-none focus:border-teal"
+                    <Lookup
+                        key={`hospede-${formularioKey}`}
+                        items={hospedesOrdenados}
                         value={hospedeId}
-                        onChange={(e) => setHospedeId(e.target.value)}
-                    >
-                        <option value="">Selecione</option>
-                        {hospedesOrdenados.map((h) => (
-                            <option key={h.id} value={h.id}>
-                                {h.nome}
-                            </option>
-                        ))}
-                    </select>
+                        onChange={setHospedeId}
+                        getId={(h) => h.id}
+                        getLabel={(h) => h.nome}
+                        placeholder="Buscar hóspede"
+                    />
                 </label>
 
                 <label className="min-w-[160px]">
