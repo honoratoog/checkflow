@@ -13,6 +13,7 @@ export function Hospedes() {
     const [busca, setBusca] = useState("");
     const [processando, setProcessando] = useState(false);
     const [carregando, setCarregando] = useState(true);
+    const [editandoId, setEditandoId] = useState<number | null>(null);
 
     function carregar() {
         setCarregando(true);
@@ -23,7 +24,7 @@ export function Hospedes() {
         carregar();
     }, []);
 
-    async function adicionarHospede(e: React.FormEvent) {
+    async function salvarHospede(e: React.FormEvent) {
         e.preventDefault();
         if (!nome || !documento) return;
 
@@ -31,17 +32,39 @@ export function Hospedes() {
         setSucesso("");
         setProcessando(true);
         try {
-            await api.criarHospede(nome, documento, telefone);
+            if (editandoId) {
+                await api.editarHospede(editandoId, nome, documento, telefone);
+                setSucesso("Hóspede atualizado com sucesso.");
+            } else {
+                await api.criarHospede(nome, documento, telefone);
+                setSucesso("Hóspede cadastrado com sucesso.");
+            }
             setNome("");
             setDocumento("");
             setTelefone("");
-            setSucesso("Hóspede cadastrado com sucesso.");
+            setEditandoId(null);
             carregar();
         } catch (err: any) {
             setErro(err.message);
         } finally {
             setProcessando(false);
         }
+    }
+
+    function iniciarEdicao(h: Hospede) {
+        setEditandoId(h.id);
+        setNome(h.nome);
+        setDocumento(h.documento);
+        setTelefone(h.telefone ?? "");
+        setErro("");
+        setSucesso("");
+    }
+
+    function cancelarEdicao() {
+        setEditandoId(null);
+        setNome("");
+        setDocumento("");
+        setTelefone("");
     }
 
     async function excluirHospede(id: number, nome: string) {
@@ -52,6 +75,7 @@ export function Hospedes() {
         setProcessando(true);
         try {
             await api.excluirHospede(id);
+            if (editandoId === id) cancelarEdicao();
             setSucesso("Hóspede excluído com sucesso.");
             carregar();
         } catch (err: any) {
@@ -73,7 +97,7 @@ export function Hospedes() {
                 <p className="text-ink/60 mt-1">Cadastro de quem se hospeda na pousada.</p>
             </div>
 
-            <form onSubmit={adicionarHospede} className="bg-white border border-ink/10 rounded-sm p-5 flex gap-3 flex-wrap items-end">
+            <form onSubmit={salvarHospede} className="bg-white border border-ink/10 rounded-sm p-5 flex gap-3 flex-wrap items-end">
                 <label className="flex-1 min-w-[160px]">
                     <span className="block text-xs text-ink/50 mb-1">Nome</span>
                     <input
@@ -100,8 +124,13 @@ export function Hospedes() {
                     />
                 </label>
                 <button disabled={processando} className="bg-teal text-white px-5 py-2 rounded-sm hover:bg-teal-dark transition-colors disabled:opacity-50" type="submit">
-                    {processando ? "Salvando..." : "Adicionar hóspede"}
+                    {processando ? "Salvando..." : editandoId ? "Salvar alterações" : "Adicionar hóspede"}
                 </button>
+                {editandoId && (
+                    <button type="button" onClick={cancelarEdicao} disabled={processando} className="text-sm text-ink/50 hover:text-ink px-3 py-2">
+                        Cancelar
+                    </button>
+                )}
             </form>
 
             <Erro mensagem={erro} />
@@ -125,7 +154,14 @@ export function Hospedes() {
                                 <td className="py-3 px-4">{h.nome}</td>
                                 <td className="py-3 px-4 text-ink/70">{h.documento}</td>
                                 <td className="py-3 px-4 text-ink/70">{h.telefone}</td>
-                                <td className="py-3 px-4 text-right">
+                                <td className="py-3 px-4 text-right space-x-3">
+                                    <button
+                                        onClick={() => iniciarEdicao(h)}
+                                        disabled={processando}
+                                        className="text-sm text-teal-dark hover:underline"
+                                    >
+                                        Editar
+                                    </button>
                                     <button
                                         onClick={() => excluirHospede(h.id, h.nome)}
                                         disabled={processando}
