@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api, Hospede } from "./api";
 import { Erro } from "./Erro";
 import { Sucesso } from "./Sucesso";
@@ -14,6 +14,7 @@ export function Hospedes() {
     const [processando, setProcessando] = useState(false);
     const [carregando, setCarregando] = useState(true);
     const [editandoId, setEditandoId] = useState<number | null>(null);
+    const formularioRef = useRef<HTMLFormElement>(null);
 
     function carregar() {
         setCarregando(true);
@@ -58,6 +59,7 @@ export function Hospedes() {
         setTelefone(h.telefone ?? "");
         setErro("");
         setSucesso("");
+        formularioRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
     function cancelarEdicao() {
@@ -97,7 +99,11 @@ export function Hospedes() {
                 <p className="text-ink/60 mt-1">Cadastro de quem se hospeda na pousada.</p>
             </div>
 
-            <form onSubmit={salvarHospede} className="bg-white border border-ink/10 rounded-sm p-5 flex gap-3 flex-wrap items-end">
+            <form
+                ref={formularioRef}
+                onSubmit={salvarHospede}
+                className={`bg-white border rounded-sm p-5 flex gap-3 flex-wrap items-end ${editandoId ? "border-teal" : "border-ink/10"}`}
+            >
                 <label className="flex-1 min-w-[160px]">
                     <span className="block text-xs text-ink/50 mb-1">Nome</span>
                     <input
