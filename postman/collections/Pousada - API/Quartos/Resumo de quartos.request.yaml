@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{baseUrl}}/quartos/resumo"
+method: GET
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status 200', () => pm.response.to.have.status(200));
+      pm.test('Retorna os contadores numéricos', () => {
+          const r = pm.response.json();
+          ['total', 'livres', 'ocupados', 'limpezaPendente'].forEach(k => pm.expect(r[k]).to.be.a('number'));
+      });
+      pm.test('A soma dos status é igual ao total', () => {
+          const r = pm.response.json();
+          pm.expect(r.livres + r.ocupados + r.limpezaPendente).to.eql(r.total);
+      });
+    language: text/javascript
+order: 4500
