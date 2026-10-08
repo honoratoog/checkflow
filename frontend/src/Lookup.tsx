@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useId, useState } from "react";
 
 type LookupProps<T> = {
     items: T[];
@@ -10,32 +10,18 @@ type LookupProps<T> = {
 };
 
 export function Lookup<T>({ items, value, onChange, getId, getLabel, placeholder }: LookupProps<T>) {
-    const [busca, setBusca] = useState("");
-    const [aberto, setAberto] = useState(false);
-    const containerRef = useRef<HTMLDivElement>(null);
-
+    const listboxId = useId();
     const selecionado = items.find((item) => String(getId(item)) === value);
 
-    useEffect(() => {
-        setBusca(selecionado ? getLabel(selecionado) : "");
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [value]);
-
-    useEffect(() => {
-        function aoClicarFora(e: MouseEvent) {
-            if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-                setAberto(false);
-                setBusca(selecionado ? getLabel(selecionado) : "");
-            }
-        }
-        document.addEventListener("mousedown", aoClicarFora);
-        return () => document.removeEventListener("mousedown", aoClicarFora);
-    }, [selecionado, getLabel]);
+    const [busca, setBusca] = useState(selecionado ? getLabel(selecionado) : "");
+    const [aberto, setAberto] = useState(false);
+    const [destaque, setDestaque] = useState(0);
 
     const termo = busca.trim().toLocaleLowerCase("pt-BR");
     const itensFiltrados = termo
         ? items.filter((item) => getLabel(item).toLocaleLowerCase("pt-BR").includes(termo))
         : items;
+    const destaqueSeguro = Math.min(destaque, Math.max(itensFiltrados.length - 1, 0));
 
     function selecionar(item: T) {
         onChange(String(getId(item)));
@@ -43,30 +29,72 @@ export function Lookup<T>({ items, value, onChange, getId, getLabel, placeholder
         setAberto(false);
     }
 
+    function aoDigitar(texto: string) {
+        setBusca(texto);
+        setAberto(true);
+        setDestaque(0);
+        if (value) onChange("");
+    }
+
+    function aoPerderFoco() {
+        setAberto(false);
+        setBusca(selecionado ? getLabel(selecionado) : "");
+    }
+
+    function aoTeclar(e: React.KeyboardEvent<HTMLInputElement>) {
+        if (e.key === "Escape") {
+            setAberto(false);
+            return;
+        }
+        if (!aberto) {
+            if (e.key === "ArrowDown") {
+                e.preventDefault();
+                setAberto(true);
+                setDestaque(0);
+            }
+            return;
+        }
+        if (e.key === "ArrowDown") {
+            e.preventDefault();
+            setDestaque((d) => Math.min(d + 1, itensFiltrados.length - 1));
+        } else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            setDestaque((d) => Math.max(d - 1, 0));
+        } else if (e.key === "Enter") {
+            const item = itensFiltrados[destaqueSeguro];
+            if (item) {
+                e.preventDefault();
+                selecionar(item);
+            }
+        }
+    }
+
     return (
-        <div ref={containerRef} className="relative">
+        <div className="relative">
             <input
                 role="combobox"
                 aria-expanded={aberto}
-                aria-controls="lookup-lista"
+                aria-controls={listboxId}
+                aria-activedescendant={aberto && itensFiltrados[destaqueSeguro] ? `${listboxId}-${destaqueSeguro}` : undefined}
                 className="border border-ink/15 rounded-sm px-3 py-2 w-full focus:outline-none focus:border-teal"
                 placeholder={placeholder}
                 value={busca}
-                onChange={(e) => setBusca(e.target.value)}
+                onChange={(e) => aoDigitar(e.target.value)}
                 onFocus={() => setAberto(true)}
-                onKeyDown={(e) => {
-                    if (e.key === "Escape") setAberto(false);
-                }}
+                onBlur={aoPerderFoco}
+                onKeyDown={aoTeclar}
             />
             {aberto && (
-                <ul id="lookup-lista" role="listbox" className="absolute z-10 mt-1 w-full max-h-48 overflow-auto bg-white border border-ink/15 rounded-sm shadow-sm">
-                    {itensFiltrados.map((item) => (
-                        <li key={getId(item)} role="option">
+                <ul id={listboxId} role="listbox" className="absolute z-10 mt-1 w-full max-h-48 overflow-auto bg-white border border-ink/15 rounded-sm shadow-sm">
+                    {itensFiltrados.map((item, indice) => (
+                        <li key={getId(item)} id={`${listboxId}-${indice}`} role="option" aria-selected={indice === destaqueSeguro}>
                             <button
                                 type="button"
                                 onMouseDown={(e) => e.preventDefault()}
                                 onClick={() => selecionar(item)}
-                                className="block w-full text-left px-3 py-2 text-sm hover:bg-teal-light/40"
+                                className={`block w-full text-left px-3 py-2 text-sm hover:bg-teal-light/40 ${
+                                    indice === destaqueSeguro ? "bg-teal-light/40" : ""
+                                }`}
                             >
                                 {getLabel(item)}
                             </button>

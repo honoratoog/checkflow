@@ -22,6 +22,7 @@ export function Reservas() {
     const [sucesso, setSucesso] = useState("");
     const [processando, setProcessando] = useState(false);
     const [carregando, setCarregando] = useState(true);
+    const [formularioKey, setFormularioKey] = useState(0);
 
     function carregar() {
         setCarregando(true);
@@ -51,6 +52,7 @@ export function Reservas() {
             setQuartoId("");
             setHospedeId("");
             setDataCheckin("");
+            setFormularioKey((k) => k + 1);
             setSucesso("Reserva criada com sucesso.");
             carregar();
         } catch (err: any) {
@@ -121,6 +123,7 @@ export function Reservas() {
                 <label className="flex-1 min-w-[160px]">
                     <span className="block text-xs text-ink/50 mb-1">Quarto</span>
                     <Lookup
+                        key={`quarto-${formularioKey}`}
                         items={quartosOrdenados}
                         value={quartoId}
                         onChange={setQuartoId}
@@ -133,6 +136,7 @@ export function Reservas() {
                 <label className="flex-1 min-w-[160px]">
                     <span className="block text-xs text-ink/50 mb-1">Hóspede</span>
                     <Lookup
+                        key={`hospede-${formularioKey}`}
                         items={hospedesOrdenados}
                         value={hospedeId}
                         onChange={setHospedeId}
