@@ -9,8 +9,13 @@ const PRECO_POR_TIPO: Record<string, number> = {
     "Suíte Master": 320,
 };
 
+// Normalizado porque quartos cadastrados fora da UI (ex.: via Postman) podem ter o tipo com capitalização diferente.
+const PRECO_POR_TIPO_NORMALIZADO = Object.fromEntries(
+    Object.entries(PRECO_POR_TIPO).map(([tipo, preco]) => [tipo.toLocaleLowerCase("pt-BR"), preco])
+);
+
 export function valorDiaria(tipo: string): number | undefined {
-    return PRECO_POR_TIPO[tipo];
+    return PRECO_POR_TIPO_NORMALIZADO[tipo.trim().toLocaleLowerCase("pt-BR")];
 }
 
 export const formatoMoeda = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
