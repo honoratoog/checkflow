@@ -8,6 +8,21 @@ hospedesRouter.get("/", (req, res) => {
     res.json(hospedes);
 });
 
+hospedesRouter.get("/:id", (req, res) => {
+    const { id } = req.params;
+
+    if (!/^\d+$/.test(id)) {
+        return res.status(400).json({ error: "ID de hóspede deve ser numérico" });
+    }
+
+    const hospede = db.prepare("SELECT * FROM hospedes WHERE id = ?").get(id);
+    if (!hospede) {
+        return res.status(404).json({ error: "Hóspede não encontrado" });
+    }
+
+    res.json(hospede);
+});
+
 hospedesRouter.post("/", (req, res) => {
     const { nome, documento, telefone } = req.body;
 
