@@ -276,7 +276,9 @@ export function Reservas() {
                                 </td>
                                 <td className="py-3 px-4 text-ink/70 whitespace-nowrap">
                                     {valorAPagar !== null ? (
-                                        formatoMoeda.format(valorAPagar)
+                                        <span title={r.status === "Em andamento" ? "Valor parcial, calculado até hoje — a estadia ainda não terminou" : undefined}>
+                                            {formatoMoeda.format(valorAPagar)}
+                                        </span>
                                     ) : (
                                         <span className="text-ink/40" title="Aguardando a diária do quarto ser cadastrada no backend">
                                             —
