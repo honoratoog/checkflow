@@ -27,6 +27,46 @@ hospedesRouter.post("/", (req, res) => {
     res.status(201).json({ id: result.lastInsertRowid, nome, documento, telefone });
 });
 
+hospedesRouter.put("/:id", (req, res) => {
+    const { id } = req.params;
+
+    if (!/^\d+$/.test(id)) {
+        return res.status(400).json({ error: "ID de hóspede deve ser numérico" });
+    }
+
+    const { nome, documento, telefone } = req.body;
+
+    if (!nome || !documento || typeof nome !== "string" || typeof documento !== "string" || !nome.trim() || !documento.trim()) {
+        return res.status(400).json({ error: "Informe nome e documento do hóspede" });
+    }
+
+    const hospede = db.prepare("SELECT id FROM hospedes WHERE id = ?").get(id);
+    if (!hospede) {
+        return res.status(404).json({ error: "Hóspede não encontrado" });
+    }
+
+    const documentoFormatado = documento.trim();
+    const existente = db
+        .prepare("SELECT id FROM hospedes WHERE documento = ? AND id != ?")
+        .get(documentoFormatado, id);
+
+    if (existente) {
+        return res.status(400).json({ error: "Já existe outro hóspede cadastrado com esse documento" });
+    }
+
+    const telefoneFormatado = typeof telefone === "string" && telefone.trim() ? telefone.trim() : null;
+
+    db.prepare("UPDATE hospedes SET nome = ?, documento = ?, telefone = ? WHERE id = ?").run(
+        nome.trim(),
+        documentoFormatado,
+        telefoneFormatado,
+        id
+    );
+
+    const atualizado = db.prepare("SELECT * FROM hospedes WHERE id = ?").get(id);
+    res.json(atualizado);
+});
+
 hospedesRouter.delete("/:id", (req, res) => {
     const { id } = req.params;
 
