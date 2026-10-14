@@ -21,6 +21,8 @@ export type Reserva = {
     quarto_numero: string;
     hospede_nome: string;
     data_checkin: string;
+    // Ainda não retornada pela API; campo previsto para quando o backend passar a registrar a data de checkout.
+    data_checkout?: string;
     status: "Reservado" | "Em andamento" | "Finalizado";
 };
 
