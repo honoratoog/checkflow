@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api, ConsumoMinibar, Reserva } from "./api";
 import { Erro } from "./Erro";
 import { Sucesso } from "./Sucesso";
@@ -30,16 +30,26 @@ export function Minibar() {
         carregar();
     }, []);
 
+    const ultimaConsultaRef = useRef("");
+
     function carregarConsumos(id: string) {
+        ultimaConsultaRef.current = id;
+
         if (!id) {
             setConsumos([]);
             return;
         }
         setCarregandoConsumos(true);
         api.listarConsumosMinibar(Number(id))
-            .then(setConsumos)
-            .catch((err: Error) => setErro(err.message))
-            .finally(() => setCarregandoConsumos(false));
+            .then((lista) => {
+                if (ultimaConsultaRef.current === id) setConsumos(lista);
+            })
+            .catch((err: Error) => {
+                if (ultimaConsultaRef.current === id) setErro(err.message);
+            })
+            .finally(() => {
+                if (ultimaConsultaRef.current === id) setCarregandoConsumos(false);
+            });
     }
 
     useEffect(() => {
