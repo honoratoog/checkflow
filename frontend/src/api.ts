@@ -26,6 +26,15 @@ export type Reserva = {
     status: "Reservado" | "Em andamento" | "Finalizado";
 };
 
+// Recurso ainda não implementado no backend (MODELO-DOMINIO.md prevê ConsumoMinibar, escopo N2/N3).
+export type ConsumoMinibar = {
+    id: number;
+    reserva_id: number;
+    item: string;
+    quantidade: number;
+    valor_unitario: number;
+};
+
 async function request(path: string, options?: RequestInit) {
     const res = await fetch(`${BASE_URL}${path}`, {
         headers: { "Content-Type": "application/json" },
@@ -63,4 +72,12 @@ export const api = {
     checkin: (id: number) => request(`/reservas/${id}/checkin`, { method: "POST" }),
     checkout: (id: number) => request(`/reservas/${id}/checkout`, { method: "POST" }),
     excluirReserva: (id: number) => request(`/reservas/${id}`, { method: "DELETE" }),
+
+    listarConsumosMinibar: (reserva_id: number): Promise<ConsumoMinibar[]> => request(`/reservas/${reserva_id}/consumos`),
+    lancarConsumoMinibar: (reserva_id: number, item: string, quantidade: number, valor_unitario: number) =>
+        request(`/reservas/${reserva_id}/consumos`, {
+            method: "POST",
+            body: JSON.stringify({ item, quantidade, valor_unitario }),
+        }),
+    excluirConsumoMinibar: (id: number) => request(`/consumos/${id}`, { method: "DELETE" }),
 };
