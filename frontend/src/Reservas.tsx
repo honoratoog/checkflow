@@ -10,6 +10,23 @@ const estiloStatusReserva: Record<Reserva["status"], string> = {
     Finalizado: "bg-ink/5 text-ink/40",
 };
 
+const formatoMoeda = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+
+function calcularValorAPagar(reserva: Reserva, quartos: Quarto[]): number | null {
+    if (reserva.status === "Reservado") return null;
+    // Sem data_checkout real, não dá pra saber até quando cobrar uma estadia já finalizada.
+    if (reserva.status === "Finalizado" && !reserva.data_checkout) return null;
+
+    const quarto = quartos.find((q) => q.id === reserva.quarto_id);
+    if (!quarto?.diariaBase) return null;
+
+    const inicio = new Date(reserva.data_checkin).getTime();
+    const fim = reserva.data_checkout ? new Date(reserva.data_checkout).getTime() : Date.now();
+    const noites = Math.max(1, Math.round((fim - inicio) / (1000 * 60 * 60 * 24)));
+
+    return noites * quarto.diariaBase;
+}
+
 export function Reservas() {
     const [reservas, setReservas] = useState<Reserva[]>([]);
     const [quartos, setQuartos] = useState<Quarto[]>([]);
@@ -240,11 +257,14 @@ export function Reservas() {
                             <th className="py-3 px-4 font-normal">Hóspede</th>
                             <th className="py-3 px-4 font-normal">Check-in</th>
                             <th className="py-3 px-4 font-normal">Status</th>
+                            <th className="py-3 px-4 font-normal">Valor a pagar</th>
                             <th className="py-3 px-4 font-normal">Ações</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {reservasFiltradas.map((r) => (
+                        {reservasFiltradas.map((r) => {
+                            const valorAPagar = calcularValorAPagar(r, quartos);
+                            return (
                             <tr key={r.id} className="border-b border-ink/5 last:border-0">
                                 <td className="py-3 px-4">Quarto {r.quarto_numero}</td>
                                 <td className="py-3 px-4">{r.hospede_nome}</td>
@@ -253,6 +273,17 @@ export function Reservas() {
                                     <span className={`text-xs px-2 py-1 rounded-sm ${estiloStatusReserva[r.status]}`}>
                                         {r.status}
                                     </span>
+                                </td>
+                                <td className="py-3 px-4 text-ink/70 whitespace-nowrap">
+                                    {valorAPagar !== null ? (
+                                        <span title={r.status === "Em andamento" ? "Valor parcial, calculado até hoje — a estadia ainda não terminou" : undefined}>
+                                            {formatoMoeda.format(valorAPagar)}
+                                        </span>
+                                    ) : (
+                                        <span className="text-ink/40" title="Aguardando a diária do quarto ser cadastrada no backend">
+                                            —
+                                        </span>
+                                    )}
                                 </td>
                                 <td className="py-3 px-4 space-x-3">
                                     {r.status === "Reservado" && (
@@ -274,15 +305,16 @@ export function Reservas() {
                                     </button>
                                 </td>
                             </tr>
-                        ))}
+                            );
+                        })}
                         {!carregando && reservasFiltradas.length === 0 && (
                             <tr>
-                                <td className="py-4 px-4 text-ink/50" colSpan={5}>
+                                <td className="py-4 px-4 text-ink/50" colSpan={6}>
                                     {filtroAtivo ? "Nenhuma reserva encontrada para essa busca." : "Nenhuma reserva criada ainda."}
                                 </td>
                             </tr>
                         )}
-                        {carregando && <tr><td className="py-4 px-4 text-ink/50" colSpan={5}>Carregando reservas...</td></tr>}
+                        {carregando && <tr><td className="py-4 px-4 text-ink/50" colSpan={6}>Carregando reservas...</td></tr>}
                     </tbody>
                 </table>
             </div>
