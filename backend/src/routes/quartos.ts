@@ -4,7 +4,33 @@ import { db } from "../db";
 export const quartosRouter = Router();
 
 quartosRouter.get("/", (req, res) => {
-    const quartos = db.prepare("SELECT * FROM quartos").all();
+    const { numero, tipo, status } = req.query;
+
+    const conditions: string[] = [];
+    const params: string[] = [];
+
+    if (typeof numero === "string" && numero.trim()) {
+        conditions.push("numero LIKE ? COLLATE NOCASE");
+        params.push(`%${numero.trim()}%`);
+    }
+
+    if (typeof tipo === "string" && tipo.trim()) {
+        conditions.push("tipo LIKE ? COLLATE NOCASE");
+        params.push(`%${tipo.trim()}%`);
+    }
+
+    if (typeof status === "string" && status.trim()) {
+        conditions.push("status LIKE ? COLLATE NOCASE");
+        params.push(`%${status.trim()}%`);
+    }
+
+    let sql = "SELECT * FROM quartos";
+    if (conditions.length > 0) {
+        sql += " WHERE " + conditions.join(" AND ");
+    }
+    sql += " ORDER BY numero ASC";
+
+    const quartos = db.prepare(sql).all(...params);
     res.json(quartos);
 });
 
