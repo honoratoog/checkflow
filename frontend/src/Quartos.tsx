@@ -129,16 +129,16 @@ export function Quartos() {
                             </option>
                         ))}
                     </select>
-                    <span className="block text-xs text-ink/50 mt-1">
-                        {diariaSelecionada !== undefined
-                            ? `Diária: ${formatoMoeda.format(diariaSelecionada)}`
-                            : "Selecione um tipo para ver a diária"}
-                    </span>
                 </label>
                 <button disabled={processando} className="bg-teal text-white px-5 py-2 rounded-sm hover:bg-teal-dark transition-colors disabled:opacity-50" type="submit">
                     {processando ? "Salvando..." : "Adicionar quarto"}
                 </button>
             </form>
+            <p className="text-xs text-ink/50">
+                {diariaSelecionada !== undefined
+                    ? `Diária: ${formatoMoeda.format(diariaSelecionada)}`
+                    : "Selecione um tipo para ver a diária"}
+            </p>
 
             <Erro mensagem={erro} />
             <Sucesso mensagem={sucesso} />
