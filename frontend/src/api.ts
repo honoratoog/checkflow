@@ -5,6 +5,8 @@ export type Quarto = {
     numero: string;
     tipo: string;
     status: "Livre" | "Ocupado" | "Limpeza Pendente";
+    // Ainda não retornada pela API; campo previsto em MODELO-DOMINIO.md para quando o backend implementar precificação (N2/N3).
+    diariaBase?: number;
 };
 
 export type Hospede = {
