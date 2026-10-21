@@ -59,15 +59,17 @@ export function Minibar() {
 
     async function lancarConsumo(e: React.FormEvent) {
         e.preventDefault();
-        const qtd = Number(quantidade);
-        const valor = Number(valorUnitario);
-        if (!reservaId || !item || !(qtd > 0) || !(valor > 0)) return;
-
         setErro("");
         setSucesso("");
+
+        const itemLimpo = item.trim();
+        const qtd = Number(quantidade);
+        const valor = Number(valorUnitario);
+        if (!reservaId || !itemLimpo || !(qtd > 0) || !(valor > 0)) return;
+
         setProcessando(true);
         try {
-            await api.lancarConsumoMinibar(Number(reservaId), item, qtd, valor);
+            await api.lancarConsumoMinibar(Number(reservaId), itemLimpo, qtd, valor);
             setItem("");
             setQuantidade("1");
             setValorUnitario("");
