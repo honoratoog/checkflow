@@ -12,6 +12,11 @@ const estiloStatusReserva: Record<Reserva["status"], string> = {
 
 const formatoMoeda = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
+// Compara só a data (sem horário) para a contagem de noites não variar conforme a hora do dia em que a tela é aberta.
+function dataSomenteDia(valor: string): number {
+    return new Date(valor.slice(0, 10)).getTime();
+}
+
 function calcularValorAPagar(reserva: Reserva, quartos: Quarto[]): number | null {
     if (reserva.status === "Reservado") return null;
     // Sem data_checkout real, não dá pra saber até quando cobrar uma estadia já finalizada.
@@ -20,8 +25,8 @@ function calcularValorAPagar(reserva: Reserva, quartos: Quarto[]): number | null
     const quarto = quartos.find((q) => q.id === reserva.quarto_id);
     if (!quarto?.diariaBase) return null;
 
-    const inicio = new Date(reserva.data_checkin).getTime();
-    const fim = reserva.data_checkout ? new Date(reserva.data_checkout).getTime() : Date.now();
+    const inicio = dataSomenteDia(reserva.data_checkin);
+    const fim = dataSomenteDia(reserva.data_checkout ?? new Date().toISOString());
     const noites = Math.max(1, Math.round((fim - inicio) / (1000 * 60 * 60 * 24)));
 
     return noites * quarto.diariaBase;
