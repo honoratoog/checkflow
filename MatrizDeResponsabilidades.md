@@ -87,13 +87,15 @@
 **Principais atividades realizadas:**
 - Organização do repositório GitHub da equipe;
 - Preparação do repositório para a entrega da N2;
-- Organização da versão entregue do sistema.
+- Organização da versão entregue do sistema;
+- Atualização do swagger do sistema.
 
 **Evidências possíveis:**
 - Repositório GitHub do CHECKFLOW;
 - Histórico de commits;
 - Tag/Release `v2.0` após a finalização da entrega;
-- Documentação organizada para a N2.
+- Documentação organizada para a N2;
+- `postman/*`.
 
 ---
 
