@@ -80,16 +80,6 @@ Tela de gerenciamento das reservas, permitindo acompanhar informações relacion
 | Leonardo Lima | Desenvolvedor Backend |
 | Lucas Honorato | DevOps |
 
-## Matriz de Responsabilidades
-| Integrante | Atividade |
-|---|---|
-| Marina Rosa Oliveira | Levantamento de melhorias/novas features para o software, criação das atividades e gestão da equipe. |
-| Ana Julia Castelo Branco | Levantamento e documentação de novos requisitos para N2. |
-| Miguel Huertas | Testes das atividades e aprovação de _pull requests_. |
-| Miguel Dufloth | Desenvolvimento das atividades de _front-end_. |
-| Leonardo Lima | Desenvolvimento das atividades de _back-end_. |
-| Lucas Honorato | Criação e configuração do repositório. |
-
 ## Informações acadêmicas
 
 - **Disciplina:** Manutenção e Melhoria de Software
