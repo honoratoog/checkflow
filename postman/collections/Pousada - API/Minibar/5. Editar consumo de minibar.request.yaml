@@ -1,0 +1,26 @@
+$kind: http-request
+url: "{{baseUrl}}/consumos/{{consumoMinibarId}}"
+method: PUT
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "item": "Água com Gás 500ml",
+      "quantidade": 3,
+      "valor_unitario": 7.50
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status 200', () => pm.response.to.have.status(200));
+      const body = pm.response.json();
+      pm.test('Retorna consumo com dados atualizados', () => {
+          pm.expect(body.id).to.eql(pm.collectionVariables.get('consumoMinibarId'));
+          pm.expect(body.item).to.eql('Água com Gás 500ml');
+          pm.expect(body.quantidade).to.eql(3);
+          pm.expect(body.valor_unitario).to.eql(7.5);
+      });
+    language: text/javascript
+order: 8500
