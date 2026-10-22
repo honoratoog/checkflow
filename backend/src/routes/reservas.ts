@@ -105,3 +105,69 @@ reservasRouter.delete("/:id", (req, res) => {
     db.prepare("DELETE FROM reservas WHERE id = ?").run(id);
     res.status(204).send();
 });
+
+reservasRouter.get("/:id/consumos", (req, res) => {
+    const { id } = req.params;
+
+    if (!/^\d+$/.test(id)) {
+        return res.status(400).json({ error: "ID de reserva deve ser numérico" });
+    }
+
+    const reserva = db.prepare("SELECT id FROM reservas WHERE id = ?").get(id);
+    if (!reserva) {
+        return res.status(404).json({ error: "Reserva não encontrada" });
+    }
+
+    const consumos = db
+        .prepare("SELECT * FROM consumos_minibar WHERE reserva_id = ? ORDER BY id ASC")
+        .all(id);
+
+    res.json(consumos);
+});
+
+reservasRouter.post("/:id/consumos", (req, res) => {
+    const { id } = req.params;
+
+    if (!/^\d+$/.test(id)) {
+        return res.status(400).json({ error: "ID de reserva deve ser numérico" });
+    }
+
+    const reserva = db.prepare("SELECT * FROM reservas WHERE id = ?").get(id) as any;
+    if (!reserva) {
+        return res.status(404).json({ error: "Reserva não encontrada" });
+    }
+
+    // RN05: Consumos de minibar só podem ser lançados enquanto a estadia estiver ativa (quarto Ocupado / reserva "Em andamento")
+    if (reserva.status !== "Em andamento") {
+        return res.status(400).json({ error: "Consumos de minibar só podem ser lançados para reservas em andamento" });
+    }
+
+    const { item, quantidade, valor_unitario } = req.body;
+
+    if (!item || typeof item !== "string" || !item.trim()) {
+        return res.status(400).json({ error: "Informe o item do minibar" });
+    }
+
+    const qtd = quantidade !== undefined ? Number(quantidade) : 1;
+    if (!Number.isInteger(qtd) || qtd <= 0) {
+        return res.status(400).json({ error: "Quantidade deve ser um número inteiro positivo" });
+    }
+
+    const valor = Number(valor_unitario);
+    if (valor_unitario === undefined || isNaN(valor) || valor < 0) {
+        return res.status(400).json({ error: "Valor unitário deve ser um número maior ou igual a zero" });
+    }
+
+    const result = db
+        .prepare("INSERT INTO consumos_minibar (reserva_id, item, quantidade, valor_unitario) VALUES (?, ?, ?, ?)")
+        .run(id, item.trim(), qtd, valor);
+
+    res.status(201).json({
+        id: result.lastInsertRowid,
+        reserva_id: Number(id),
+        item: item.trim(),
+        quantidade: qtd,
+        valor_unitario: valor,
+    });
+});
+

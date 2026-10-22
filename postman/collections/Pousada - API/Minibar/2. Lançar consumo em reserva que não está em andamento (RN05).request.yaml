@@ -1,0 +1,55 @@
+$kind: http-request
+url: "{{baseUrl}}/reservas/{{reservaPendenteMinibarId}}/consumos"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "item": "Refrigerante 350ml",
+      "quantidade": 1,
+      "valor_unitario": 8.00
+    }
+scripts:
+  - type: beforeRequest
+    code: |-
+      const sufixo = Date.now() + 1;
+      const baseUrl = pm.variables.get('baseUrl');
+      // Cria reserva com status 'Reservado' (sem check-in)
+      pm.sendRequest({
+          url: baseUrl + '/quartos',
+          method: 'POST',
+          header: { 'Content-Type': 'application/json' },
+          body: { mode: 'raw', raw: JSON.stringify({ numero: 'MB_PEND' + sufixo, tipo: 'Casal' }) }
+      }, (err, resQuarto) => {
+          if (err) return;
+          const quartoId = resQuarto.json().id;
+          pm.sendRequest({
+              url: baseUrl + '/hospedes',
+              method: 'POST',
+              header: { 'Content-Type': 'application/json' },
+              body: { mode: 'raw', raw: JSON.stringify({ nome: 'Hospede Pendente', documento: 'DOC_PEND' + sufixo }) }
+          }, (errH, resHospede) => {
+              if (errH) return;
+              const hospedeId = resHospede.json().id;
+              pm.sendRequest({
+                  url: baseUrl + '/reservas',
+                  method: 'POST',
+                  header: { 'Content-Type': 'application/json' },
+                  body: { mode: 'raw', raw: JSON.stringify({ quarto_id: quartoId, hospede_id: hospedeId, data_checkin: '2026-10-30' }) }
+              }, (errR, resReserva) => {
+                  if (errR) return;
+                  pm.collectionVariables.set('reservaPendenteMinibarId', resReserva.json().id);
+              });
+          });
+      });
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test('Status 400', () => pm.response.to.have.status(400));
+      pm.test('RN05 - Rejeita lançamento se reserva não estiver em andamento', () => {
+          pm.expect(pm.response.json().error).to.eql('Consumos de minibar só podem ser lançados para reservas em andamento');
+      });
+    language: text/javascript
+order: 8200

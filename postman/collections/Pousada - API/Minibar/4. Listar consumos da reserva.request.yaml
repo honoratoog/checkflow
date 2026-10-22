@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{baseUrl}}/reservas/{{reservaMinibarId}}/consumos"
+method: GET
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status 200', () => pm.response.to.have.status(200));
+      const body = pm.response.json();
+      pm.test('Retorna lista de consumos', () => {
+          pm.expect(body).to.be.an('array');
+          pm.expect(body.length).to.be.at.least(1);
+          const consumo = body.find(c => c.id === pm.collectionVariables.get('consumoMinibarId'));
+          pm.expect(consumo).to.not.be.undefined;
+          pm.expect(consumo.item).to.eql('Água Mineral 500ml');
+      });
+    language: text/javascript
+order: 8400
