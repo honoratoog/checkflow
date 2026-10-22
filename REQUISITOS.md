@@ -65,7 +65,7 @@ Requisitos levantados a partir das issues criadas pelo PO no Trello para a Entre
 | RF20 | O sistema deve expor uma rota de busca avançada de reservas, permitindo filtrar por quarto, hóspede, data de check-in e/ou data de check-out. *(pré-requisito de RF19)*                                                                  | Média      | Não    |
 | RF21 | O sistema deve utilizar um componente de busca/lookup para seleção de **Quartos** e **Hóspedes** nas telas de reservas, em substituição ao componente `Select` atual.                                                                    | Baixa      | Não    |
 | RF22 | O sistema deve oferecer um método de busca dos dados cadastrais de um hóspede específico.                                                                                                                                                 | Média      | Não    |
-| RF23 | O sistema deve oferecer um método de edição dos dados cadastrais de um hóspede. *(pré-requisito de RF24)*                                                                                                                                 | Média      | Não    |
+| RF23 | O sistema deve oferecer um método de edição dos dados cadastrais de um hóspede. *(pré-requisito de RF24)*                                                                                                                                 | Média      | Sim    |
 | RF24 | O sistema deve permitir, pela interface, editar os dados cadastrais de um hóspede já cadastrado.                                                                                                                                          | Média      | Não    |
 
 ## 3. Regras de Negócio (RN)

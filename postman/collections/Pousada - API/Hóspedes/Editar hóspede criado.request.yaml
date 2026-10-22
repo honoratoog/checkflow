@@ -1,0 +1,25 @@
+$kind: http-request
+url: "{{baseUrl}}/hospedes/{{hospedeId}}"
+method: PUT
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "nome": "Maria Silva Atualizada",
+      "documento": "{{documentoHospede}}",
+      "telefone": "47988887777"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status 200', () => pm.response.to.have.status(200));
+      const body = pm.response.json();
+      pm.test('Retorna o hóspede com os dados atualizados', () => {
+          pm.expect(body.id).to.eql(pm.collectionVariables.get('hospedeId'));
+          pm.expect(body.nome).to.eql('Maria Silva Atualizada');
+          pm.expect(body.telefone).to.eql('47988887777');
+      });
+    language: text/javascript
+order: 3800
