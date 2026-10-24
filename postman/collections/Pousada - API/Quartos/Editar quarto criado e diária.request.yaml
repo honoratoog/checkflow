@@ -1,0 +1,25 @@
+$kind: http-request
+url: "{{baseUrl}}/quartos/{{quartoDiariaId}}"
+method: PUT
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "tipo": "Suíte Master",
+      "diaria_base": 380
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status 200', () => pm.response.to.have.status(200));
+      const body = pm.response.json();
+      pm.test('Retorna o quarto atualizado com nova diária e tipo', () => {
+          pm.expect(body.id).to.eql(pm.collectionVariables.get('quartoDiariaId'));
+          pm.expect(body.tipo).to.eql('Suíte Master');
+          pm.expect(body.diaria_base).to.eql(380);
+          pm.expect(body.diariaBase).to.eql(380);
+      });
+    language: text/javascript
+order: 4350
