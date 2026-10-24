@@ -1,0 +1,26 @@
+$kind: http-request
+url: "{{baseUrl}}/reservas"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "quarto_id": {{quartoId}},
+      "hospede_id": {{hospedeId}},
+      "data_checkin": "2026-11-20",
+      "data_checkout": "2026-11-25"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status 201', () => pm.response.to.have.status(201));
+      const body = pm.response.json();
+      pm.test('Reserva criada com data de checkout', () => {
+          pm.expect(body.data_checkin).to.eql('2026-11-20');
+          pm.expect(body.data_checkout).to.eql('2026-11-25');
+      });
+      pm.collectionVariables.set('reservaCheckoutId', body.id);
+    language: text/javascript
+order: 20000
