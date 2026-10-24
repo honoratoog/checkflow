@@ -18,7 +18,8 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     nome TEXT NOT NULL,
     documento TEXT NOT NULL,
-    telefone TEXT
+    telefone TEXT,
+    tipo_documento TEXT
   );
 
   CREATE TABLE IF NOT EXISTS reservas (
@@ -44,6 +45,12 @@ db.exec(`
 const colunasQuartos = db.prepare("PRAGMA table_info(quartos)").all() as { name: string }[];
 if (!colunasQuartos.some((c) => c.name === "diaria_base")) {
     db.exec("ALTER TABLE quartos ADD COLUMN diaria_base REAL");
+}
+
+// Migração para adicionar tipo_documento em hospedes
+const colunasHospedes = db.prepare("PRAGMA table_info(hospedes)").all() as { name: string }[];
+if (!colunasHospedes.some((c) => c.name === "tipo_documento")) {
+    db.exec("ALTER TABLE hospedes ADD COLUMN tipo_documento TEXT");
 }
 
 // Preenche diaria_base de quartos pré-existentes sem valor
