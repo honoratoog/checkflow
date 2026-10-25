@@ -85,10 +85,12 @@
 ### Lucas Honorato — DevOps
 
 **Principais atividades realizadas:**
-- Organização do repositório GitHub da equipe;
+- Organização e configuração do repositório GitHub da equipe;
+- Criação de pipeline CI com GitHub Actions (build automático);
+- Documentação de padrão de versionamento, etc;
 - Preparação do repositório para a entrega da N2;
 - Organização da versão entregue do sistema;
-- Atualização do swagger do sistema.
+- Atualização do postman/swagger do sistema.
 
 **Evidências possíveis:**
 - Repositório GitHub do CHECKFLOW;
