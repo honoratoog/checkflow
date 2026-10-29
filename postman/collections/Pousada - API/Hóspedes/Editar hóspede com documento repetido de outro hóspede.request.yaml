@@ -1,0 +1,38 @@
+$kind: http-request
+url: "{{baseUrl}}/hospedes/{{hospedeId}}"
+method: PUT
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "nome": "Maria Silva",
+      "documento": "{{outroDocumentoHospede}}",
+      "telefone": "47988887777"
+    }
+scripts:
+  - type: beforeRequest
+    code: |-
+      const outroDoc = 'DOC_CONFLITO_' + Date.now();
+      pm.collectionVariables.set('outroDocumentoHospede', outroDoc);
+      pm.sendRequest({
+          url: pm.variables.get('baseUrl') + '/hospedes',
+          method: 'POST',
+          header: { 'Content-Type': 'application/json' },
+          body: {
+              mode: 'raw',
+              raw: JSON.stringify({ nome: 'Outro Hospede', documento: outroDoc, telefone: '47900001111' })
+          }
+      }, (err, res) => {
+          if (!err) pm.collectionVariables.set('outroHospedeId', res.json().id);
+      });
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test('Status 400', () => pm.response.to.have.status(400));
+      pm.test('Erro de documento duplicado de outro hóspede', () => {
+          pm.expect(pm.response.json().error).to.eql('Já existe outro hóspede cadastrado com esse documento');
+      });
+    language: text/javascript
+order: 3860
