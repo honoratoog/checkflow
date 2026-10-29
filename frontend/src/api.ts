@@ -5,8 +5,14 @@ export type Quarto = {
     numero: string;
     tipo: string;
     status: "Livre" | "Ocupado" | "Limpeza Pendente";
-    // Ainda não retornada pela API; campo previsto em MODELO-DOMINIO.md para quando o backend implementar precificação (N2/N3).
-    diariaBase?: number;
+    diaria_base: number | null;
+};
+
+export type ResumoQuartos = {
+    total: number;
+    livres: number;
+    ocupados: number;
+    limpezaPendente: number;
 };
 
 export type Hospede = {
@@ -28,7 +34,6 @@ export type Reserva = {
     status: "Reservado" | "Em andamento" | "Finalizado";
 };
 
-// Recurso ainda não implementado no backend (MODELO-DOMINIO.md prevê ConsumoMinibar, escopo N2/N3).
 export type ConsumoMinibar = {
     id: number;
     reserva_id: number;
@@ -58,6 +63,8 @@ async function request(path: string, options?: RequestInit) {
 
 export const api = {
     listarQuartos: (): Promise<Quarto[]> => request("/quartos"),
+    // Hoje a rota "/resumo" é capturada por "/:id" no backend (registrada antes) e retorna erro. Não usar até corrigirem a ordem das rotas.
+    obterResumoQuartos: (): Promise<ResumoQuartos> => request("/quartos/resumo"),
     criarQuarto: (numero: string, tipo: string) =>
         request("/quartos", { method: "POST", body: JSON.stringify({ numero, tipo }) }),
     finalizarLimpeza: (id: number) => request(`/quartos/${id}/limpeza`, { method: "PATCH" }),
@@ -66,7 +73,6 @@ export const api = {
     listarHospedes: (): Promise<Hospede[]> => request("/hospedes"),
     criarHospede: (nome: string, documento: string, telefone: string) =>
         request("/hospedes", { method: "POST", body: JSON.stringify({ nome, documento, telefone }) }),
-    // Rota ainda não implementada no backend (débito técnico registrado no Handoff).
     editarHospede: (id: number, nome: string, documento: string, telefone: string) =>
         request(`/hospedes/${id}`, { method: "PUT", body: JSON.stringify({ nome, documento, telefone }) }),
     excluirHospede: (id: number) => request(`/hospedes/${id}`, { method: "DELETE" }),

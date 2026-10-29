@@ -1,5 +1,5 @@
-// Valores fixos por tipo, provisórios no front: o backend ainda não registra diária por quarto (MODELO-DOMINIO.md
-// prevê `diariaBase` em Quarto, mas é escopo N2/N3, ainda não implementado). Ajustar aqui até lá existir.
+// Usado para o preview de diária no cadastro (antes do quarto existir, sem id pra consultar o valor real)
+// e como fallback caso diaria_base venha nulo da API. O backend aplica os mesmos valores por padrão.
 export const TIPOS_DE_QUARTO = ["Solteiro", "Casal", "Casal com varanda", "Suíte Master"] as const;
 
 const PRECO_POR_TIPO: Record<string, number> = {
