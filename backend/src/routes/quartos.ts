@@ -59,6 +59,29 @@ quartosRouter.get("/:id", (req, res) => {
     res.json(formatarQuarto(quarto));
 });
 
+type ResumoQuartos = {
+    total: number;
+    livres: number;
+    ocupados: number;
+    limpezaPendente: number;
+};
+
+// Deve ficar antes de qualquer rota com "/:id" para não ser capturada como id.
+quartosRouter.get("/resumo", (req, res) => {
+    const resumo = db
+        .prepare(`
+            SELECT
+                COUNT(*) AS total,
+                COALESCE(SUM(CASE WHEN status = 'Livre' THEN 1 ELSE 0 END), 0) AS livres,
+                COALESCE(SUM(CASE WHEN status = 'Ocupado' THEN 1 ELSE 0 END), 0) AS ocupados,
+                COALESCE(SUM(CASE WHEN status = 'Limpeza Pendente' THEN 1 ELSE 0 END), 0) AS limpezaPendente
+            FROM quartos
+        `)
+        .get() as ResumoQuartos;
+
+    res.json(resumo);
+});
+
 quartosRouter.post("/", (req, res) => {
     const { numero, tipo, diaria_base, diariaBase } = req.body;
 
