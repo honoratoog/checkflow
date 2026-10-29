@@ -14,6 +14,7 @@ export function Quartos() {
     const [quartos, setQuartos] = useState<Quarto[]>([]);
     const [numero, setNumero] = useState("");
     const [tipo, setTipo] = useState("");
+    const [diaria, setDiaria] = useState("");
     const [erro, setErro] = useState("");
     const [sucesso, setSucesso] = useState("");
     const [processando, setProcessando] = useState(false);
@@ -33,17 +34,25 @@ export function Quartos() {
         carregar();
     }, []);
 
+    function aoMudarTipo(novoTipo: string) {
+        setTipo(novoTipo);
+        const sugestao = valorDiaria(novoTipo);
+        setDiaria(sugestao !== undefined ? String(sugestao) : "");
+    }
+
     async function adicionarQuarto(e: React.FormEvent) {
         e.preventDefault();
-        if (!numero || !tipo) return;
+        const diariaNumero = Number(diaria);
+        if (!numero || !tipo || !diaria || isNaN(diariaNumero) || diariaNumero < 0) return;
 
         setErro("");
         setSucesso("");
         setProcessando(true);
         try {
-            await api.criarQuarto(numero, tipo);
+            await api.criarQuarto(numero, tipo, diariaNumero);
             setNumero("");
             setTipo("");
+            setDiaria("");
             setSucesso("Quarto cadastrado com sucesso.");
             carregar();
         } catch (err: any) {
@@ -96,8 +105,6 @@ export function Quartos() {
         )
         .sort((a, b) => a.numero.localeCompare(b.numero, "pt-BR", { numeric: true }));
 
-    const diariaSelecionada = tipo ? valorDiaria(tipo) : undefined;
-
     return (
         <div className="space-y-8">
             <div>
@@ -120,7 +127,7 @@ export function Quartos() {
                     <select
                         className="border border-ink/15 rounded-sm px-3 py-2 w-full focus:outline-none focus:border-teal"
                         value={tipo}
-                        onChange={(e) => setTipo(e.target.value)}
+                        onChange={(e) => aoMudarTipo(e.target.value)}
                     >
                         <option value="">Selecione</option>
                         {TIPOS_DE_QUARTO.map((t) => (
@@ -130,15 +137,22 @@ export function Quartos() {
                         ))}
                     </select>
                 </label>
+                <label className="min-w-[140px]">
+                    <span className="block text-xs text-ink/50 mb-1">Diária</span>
+                    <input
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        className="border border-ink/15 rounded-sm px-3 py-2 w-full focus:outline-none focus:border-teal"
+                        placeholder="0,00"
+                        value={diaria}
+                        onChange={(e) => setDiaria(e.target.value)}
+                    />
+                </label>
                 <button disabled={processando} className="bg-teal text-white px-5 py-2 rounded-sm hover:bg-teal-dark transition-colors disabled:opacity-50" type="submit">
                     {processando ? "Salvando..." : "Adicionar quarto"}
                 </button>
             </form>
-            <p className="text-xs text-ink/50">
-                {diariaSelecionada !== undefined
-                    ? `Diária: ${formatoMoeda.format(diariaSelecionada)}`
-                    : "Selecione um tipo para ver a diária"}
-            </p>
 
             <Erro mensagem={erro} />
             <Sucesso mensagem={sucesso} />
