@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api, Quarto, Hospede, Reserva } from "./api";
+import { api, Quarto, Hospede, Reserva, ExtratoReserva } from "./api";
 import { Erro } from "./Erro";
 import { Sucesso } from "./Sucesso";
 import { Lookup } from "./Lookup";
@@ -18,18 +18,23 @@ function dataSomenteDia(valor: string): number {
 }
 
 function calcularValorAPagar(reserva: Reserva, quartos: Quarto[]): number | null {
+    if (reserva.valor_total !== undefined && reserva.valor_total !== null) {
+        return reserva.valor_total;
+    }
     if (reserva.status === "Reservado") return null;
     // Defensivo: reservas finalizadas antes da API passar a registrar data_checkout.
     if (reserva.status === "Finalizado" && !reserva.data_checkout) return null;
 
     const quarto = quartos.find((q) => q.id === reserva.quarto_id);
-    if (!quarto?.diaria_base) return null;
+    const diaria = reserva.diaria_base ?? quarto?.diaria_base;
+    if (!diaria) return null;
 
     const inicio = dataSomenteDia(reserva.data_checkin);
     const fim = dataSomenteDia(reserva.data_checkout ?? new Date().toISOString());
     const noites = Math.max(1, Math.round((fim - inicio) / (1000 * 60 * 60 * 24)));
+    const consumos = reserva.total_consumos ?? 0;
 
-    return noites * quarto.diaria_base;
+    return noites * diaria + consumos;
 }
 
 export function Reservas() {
@@ -51,6 +56,12 @@ export function Reservas() {
     const [buscaCheckin, setBuscaCheckin] = useState("");
     const [buscaCheckout, setBuscaCheckout] = useState("");
     const [filtro, setFiltro] = useState({ hospede: "", quarto: "", checkin: "", checkout: "" });
+
+    // Estado do modal de confirmação de check-out com extrato detalhado
+    const [reservaParaCheckout, setReservaParaCheckout] = useState<Reserva | null>(null);
+    const [extratoModal, setExtratoModal] = useState<ExtratoReserva | null>(null);
+    const [carregandoExtrato, setCarregandoExtrato] = useState(false);
+    const [erroModal, setErroModal] = useState("");
 
     function carregar() {
         setCarregando(true);
@@ -105,13 +116,41 @@ export function Reservas() {
         }
     }
 
-    async function fazerCheckout(id: number) {
-        setErro(""); setSucesso(""); setProcessando(true);
+    async function iniciarCheckout(r: Reserva) {
+        setReservaParaCheckout(r);
+        setCarregandoExtrato(true);
+        setErroModal("");
         try {
-            await api.checkout(id);
-            setSucesso("Check-out realizado com sucesso.");
+            const extrato = await api.obterExtrato(r.id);
+            setExtratoModal(extrato);
+        } catch (err: any) {
+            setErroModal(err.message || "Erro ao carregar o extrato da estadia.");
+        } finally {
+            setCarregandoExtrato(false);
+        }
+    }
+
+    function fecharModalCheckout() {
+        setReservaParaCheckout(null);
+        setExtratoModal(null);
+        setErroModal("");
+    }
+
+    async function confirmarCheckout() {
+        if (!reservaParaCheckout) return;
+        setErro("");
+        setSucesso("");
+        setProcessando(true);
+        try {
+            await api.checkout(reservaParaCheckout.id);
+            setSucesso(`Check-out da reserva #${reservaParaCheckout.id} (Quarto ${reservaParaCheckout.quarto_numero}) realizado com sucesso.`);
+            fecharModalCheckout();
             carregar();
-        } catch (err: any) { setErro(err.message); } finally { setProcessando(false); }
+        } catch (err: any) {
+            setErro(err.message);
+        } finally {
+            setProcessando(false);
+        }
     }
 
     async function excluirReserva(id: number) {
@@ -281,7 +320,7 @@ export function Reservas() {
                                 </td>
                                 <td className="py-3 px-4 text-ink/70 whitespace-nowrap">
                                     {valorAPagar !== null ? (
-                                        <span title={r.status === "Em andamento" ? "Valor parcial, calculado até hoje — a estadia ainda não terminou" : undefined}>
+                                        <span title={r.status === "Em andamento" ? "Valor parcial até hoje: diárias + consumos lançados" : "Total da estadia (diárias + consumos)"}>
                                             {formatoMoeda.format(valorAPagar)}
                                         </span>
                                     ) : (
@@ -297,7 +336,7 @@ export function Reservas() {
                                         </button>
                                     )}
                                     {r.status === "Em andamento" && (
-                                        <button disabled={processando} onClick={() => fazerCheckout(r.id)} className="text-teal-dark hover:underline disabled:opacity-50">
+                                        <button disabled={processando} onClick={() => iniciarCheckout(r)} className="text-teal-dark hover:underline disabled:opacity-50">
                                             Check-out
                                         </button>
                                     )}
@@ -323,6 +362,118 @@ export function Reservas() {
                     </tbody>
                 </table>
             </div>
+
+            {/* Modal de Extrato Resumo para Confirmação de Check-out */}
+            {reservaParaCheckout && (
+                <div className="fixed inset-0 bg-ink/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-sm shadow-xl max-w-lg w-full border border-ink/10 overflow-hidden flex flex-col max-h-[90vh]">
+                        <div className="p-5 border-b border-ink/10 flex justify-between items-center">
+                            <div>
+                                <h3 className="font-serif text-xl text-ink">Extrato de Check-out</h3>
+                                <p className="text-xs text-ink/60 mt-0.5">
+                                    Quarto {reservaParaCheckout.quarto_numero} — Hóspede: {reservaParaCheckout.hospede_nome}
+                                </p>
+                            </div>
+                            <button
+                                onClick={fecharModalCheckout}
+                                disabled={processando}
+                                className="text-ink/40 hover:text-ink text-2xl leading-none px-1"
+                                aria-label="Fechar"
+                            >
+                                &times;
+                            </button>
+                        </div>
+
+                        <div className="p-5 overflow-y-auto space-y-4 text-sm">
+                            {carregandoExtrato && <p className="text-ink/60">Carregando extrato da estadia...</p>}
+                            {erroModal && <p className="text-status-pendente text-sm">{erroModal}</p>}
+
+                            {extratoModal && (
+                                <>
+                                    <div className="bg-sand/30 p-3 rounded-sm space-y-1.5 border border-ink/10">
+                                        <div className="flex justify-between text-ink/70 text-xs">
+                                            <span>Período da estadia:</span>
+                                            <span className="font-medium text-ink">
+                                                {formatarData(extratoModal.data_checkin)} até {formatarData(extratoModal.data_checkout || new Date().toISOString().slice(0, 10))}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between text-ink/70">
+                                            <span>
+                                                Diárias ({extratoModal.dias_hospedado} {extratoModal.dias_hospedado === 1 ? "diária" : "diárias"} &times; {formatoMoeda.format(extratoModal.diaria)}):
+                                            </span>
+                                            <span className="font-medium text-ink">{formatoMoeda.format(extratoModal.subtotal_diarias)}</span>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <h4 className="font-medium text-ink text-xs uppercase tracking-wider mb-2">Consumos do Minibar</h4>
+                                        {extratoModal.consumos.length === 0 ? (
+                                            <p className="text-xs text-ink/50 italic bg-ink/5 p-3 rounded-sm">
+                                                Nenhum consumo de frigobar registrado para esta estadia.
+                                            </p>
+                                        ) : (
+                                            <div className="border border-ink/10 rounded-sm overflow-hidden">
+                                                <table className="w-full text-xs">
+                                                    <thead className="bg-ink/5 text-ink/60 border-b border-ink/10">
+                                                        <tr>
+                                                            <th className="py-2 px-3 text-left font-normal">Item</th>
+                                                            <th className="py-2 px-3 text-center font-normal">Qtd</th>
+                                                            <th className="py-2 px-3 text-right font-normal">Unitário</th>
+                                                            <th className="py-2 px-3 text-right font-normal">Subtotal</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {extratoModal.consumos.map((c, i) => (
+                                                            <tr key={c.id ?? i} className="border-b border-ink/5 last:border-0">
+                                                                <td className="py-2 px-3 text-ink">{c.item}</td>
+                                                                <td className="py-2 px-3 text-center text-ink/70">{c.quantidade}</td>
+                                                                <td className="py-2 px-3 text-right text-ink/70">{formatoMoeda.format(c.valor_unitario)}</td>
+                                                                <td className="py-2 px-3 text-right font-medium text-ink">{formatoMoeda.format(c.subtotal)}</td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                    <tfoot className="bg-sand/20 border-t border-ink/10 text-ink/70 font-medium">
+                                                        <tr>
+                                                            <td colSpan={3} className="py-2 px-3 text-right font-normal">Subtotal minibar:</td>
+                                                            <td className="py-2 px-3 text-right text-ink">{formatoMoeda.format(extratoModal.total_consumos)}</td>
+                                                        </tr>
+                                                    </tfoot>
+                                                </table>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="pt-3 border-t border-ink/10 flex justify-between items-baseline">
+                                        <span className="font-serif text-lg text-ink">Total a pagar:</span>
+                                        <span className="font-serif text-2xl font-bold text-teal-dark">
+                                            {formatoMoeda.format(extratoModal.total_a_pagar)}
+                                        </span>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+
+                        <div className="p-4 bg-ink/5 border-t border-ink/10 flex justify-end gap-3">
+                            <button
+                                type="button"
+                                disabled={processando}
+                                onClick={fecharModalCheckout}
+                                className="px-4 py-2 border border-ink/15 text-ink/70 rounded-sm hover:bg-ink/5 transition-colors disabled:opacity-50"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                type="button"
+                                disabled={processando || carregandoExtrato || Boolean(erroModal)}
+                                onClick={confirmarCheckout}
+                                className="bg-teal text-white px-5 py-2 rounded-sm hover:bg-teal-dark transition-colors disabled:opacity-50"
+                            >
+                                {processando ? "Processando..." : "Confirmar Check-out"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
