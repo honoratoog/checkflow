@@ -19,17 +19,17 @@ function dataSomenteDia(valor: string): number {
 
 function calcularValorAPagar(reserva: Reserva, quartos: Quarto[]): number | null {
     if (reserva.status === "Reservado") return null;
-    // Sem data_checkout real, não dá pra saber até quando cobrar uma estadia já finalizada.
+    // Defensivo: reservas finalizadas antes da API passar a registrar data_checkout.
     if (reserva.status === "Finalizado" && !reserva.data_checkout) return null;
 
     const quarto = quartos.find((q) => q.id === reserva.quarto_id);
-    if (!quarto?.diariaBase) return null;
+    if (!quarto?.diaria_base) return null;
 
     const inicio = dataSomenteDia(reserva.data_checkin);
     const fim = dataSomenteDia(reserva.data_checkout ?? new Date().toISOString());
     const noites = Math.max(1, Math.round((fim - inicio) / (1000 * 60 * 60 * 24)));
 
-    return noites * quarto.diariaBase;
+    return noites * quarto.diaria_base;
 }
 
 export function Reservas() {

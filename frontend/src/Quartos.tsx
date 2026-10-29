@@ -185,7 +185,7 @@ export function Quartos() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {quartosFiltrados.map((q) => {
-                    const diariaQuarto = valorDiaria(q.tipo);
+                    const diariaQuarto = q.diaria_base ?? valorDiaria(q.tipo);
                     return (
                     <div key={q.id} className="bg-white border border-ink/10 rounded-sm p-5">
                         <div className="flex justify-between items-start">
