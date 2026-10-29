@@ -27,6 +27,7 @@ db.exec(`
     quarto_id INTEGER NOT NULL REFERENCES quartos(id),
     hospede_id INTEGER NOT NULL REFERENCES hospedes(id),
     data_checkin TEXT NOT NULL,
+    data_checkout TEXT,
     status TEXT NOT NULL DEFAULT 'Reservado'
   );
 
@@ -51,6 +52,12 @@ if (!colunasQuartos.some((c) => c.name === "diaria_base")) {
 const colunasHospedes = db.prepare("PRAGMA table_info(hospedes)").all() as { name: string }[];
 if (!colunasHospedes.some((c) => c.name === "tipo_documento")) {
     db.exec("ALTER TABLE hospedes ADD COLUMN tipo_documento TEXT");
+}
+
+// Migração para adicionar data_checkout em reservas
+const colunasReservas = db.prepare("PRAGMA table_info(reservas)").all() as { name: string }[];
+if (!colunasReservas.some((c) => c.name === "data_checkout")) {
+    db.exec("ALTER TABLE reservas ADD COLUMN data_checkout TEXT");
 }
 
 // Preenche diaria_base de quartos pré-existentes sem valor
