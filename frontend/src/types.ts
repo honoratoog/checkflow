@@ -1,1 +1,1 @@
-export type Pagina = "home" | "quartos" | "hospedes" | "reservas";
+export type Pagina = "home" | "quartos" | "hospedes" | "reservas" | "minibar";

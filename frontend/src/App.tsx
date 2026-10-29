@@ -3,6 +3,7 @@ import { Home } from "./Home";
 import { Quartos } from "./Quartos";
 import { Hospedes } from "./Hospedes";
 import { Reservas } from "./Reservas";
+import { Minibar } from "./Minibar";
 import { Pagina } from "./types";
 
 const itensNav: { id: Pagina; label: string }[] = [
@@ -10,6 +11,7 @@ const itensNav: { id: Pagina; label: string }[] = [
     { id: "quartos", label: "Quartos" },
     { id: "hospedes", label: "Hóspedes" },
     { id: "reservas", label: "Reservas" },
+    { id: "minibar", label: "Minibar" },
 ];
 
 export default function App() {
@@ -49,6 +51,7 @@ export default function App() {
                 {pagina === "quartos" && <Quartos />}
                 {pagina === "hospedes" && <Hospedes />}
                 {pagina === "reservas" && <Reservas />}
+                {pagina === "minibar" && <Minibar />}
             </main>
         </div>
     );

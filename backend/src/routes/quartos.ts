@@ -4,8 +4,57 @@ import { db } from "../db";
 export const quartosRouter = Router();
 
 quartosRouter.get("/", (req, res) => {
-    const quartos = db.prepare("SELECT * FROM quartos").all();
+    const { numero, tipo, status } = req.query;
+
+    const conditions: string[] = [];
+    const params: string[] = [];
+
+    if (typeof numero === "string" && numero.trim()) {
+        conditions.push("numero LIKE ? COLLATE NOCASE");
+        params.push(`%${numero.trim()}%`);
+    }
+
+    if (typeof tipo === "string" && tipo.trim()) {
+        conditions.push("tipo LIKE ? COLLATE NOCASE");
+        params.push(`%${tipo.trim()}%`);
+    }
+
+    if (typeof status === "string" && status.trim()) {
+        conditions.push("status LIKE ? COLLATE NOCASE");
+        params.push(`%${status.trim()}%`);
+    }
+
+    let sql = "SELECT * FROM quartos";
+    if (conditions.length > 0) {
+        sql += " WHERE " + conditions.join(" AND ");
+    }
+    sql += " ORDER BY numero ASC";
+
+    const quartos = db.prepare(sql).all(...params);
     res.json(quartos);
+});
+
+type ResumoQuartos = {
+    total: number;
+    livres: number;
+    ocupados: number;
+    limpezaPendente: number;
+};
+
+// Deve ficar antes de qualquer rota com "/:id" para não ser capturada como id.
+quartosRouter.get("/resumo", (req, res) => {
+    const resumo = db
+        .prepare(`
+            SELECT
+                COUNT(*) AS total,
+                COALESCE(SUM(CASE WHEN status = 'Livre' THEN 1 ELSE 0 END), 0) AS livres,
+                COALESCE(SUM(CASE WHEN status = 'Ocupado' THEN 1 ELSE 0 END), 0) AS ocupados,
+                COALESCE(SUM(CASE WHEN status = 'Limpeza Pendente' THEN 1 ELSE 0 END), 0) AS limpezaPendente
+            FROM quartos
+        `)
+        .get() as ResumoQuartos;
+
+    res.json(resumo);
 });
 
 quartosRouter.post("/", (req, res) => {
