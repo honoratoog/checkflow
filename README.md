@@ -1,6 +1,7 @@
 # 🏨 Sistema de Gestão de Hospedagem — Pequenos Hotéis/Pousadas
 
-> **Grupo:** CHECKFLOW
+> **Grupo:** Cartel
+> **Projeto:** Checkflow
 
 Sistema desenvolvido para apoiar a gestão de pequenas pousadas e hotéis, centralizando o controle de **quartos, hóspedes, reservas, check-in e check-out**.
 
@@ -60,7 +61,7 @@ Tela de gerenciamento das reservas, permitindo acompanhar informações relacion
 | Nível | Escopo |
 |-------|--------|
 | **N1** | Cadastro de quartos e hóspedes; reserva de estadias; controle do estado do quarto (Livre, Ocupado, Limpeza Pendente); RN crítica de bloqueio de check-in. |
-| **N2/N3** | Lançamento do consumo do minibar diretamente no extrato do quarto; precificação dinâmica (alta/baixa temporada). |
+| **N2/N3** | Melhoria da interface de reservas, busca avançada nas telas de quartos/reservas, exibição de big numbers na home, permitir edição de cadastro de hóspedes, cálculo de total a pagar no fim da reserva, lançamento de consumos do minibar. |
 
 ## Documentação
 
@@ -72,12 +73,12 @@ Tela de gerenciamento das reservas, permitindo acompanhar informações relacion
 
 | Integrante | Papel |
 |---|---|
-| Patrick Gusmão | Product Owner (PO) |
-| Iago Koch | Engenheiro de Requisitos |
-| Caio Rosa | Quality Assurance (QA) |
-| William Vodzinsky | Desenvolvedor Frontend |
-| João Silva | Desenvolvedor Backend |
-| Pedro Israel | DevOps |
+| Marina Rosa Oliveira | Product Owner (PO) |
+| Ana Julia Castelo Branco | Engenheiro de Requisitos |
+| Miguel Huertas | Quality Assurance (QA) |
+| Miguel Dufloth | Desenvolvedor Frontend |
+| Leonardo Lima | Desenvolvedor Backend |
+| Lucas Honorato | DevOps |
 
 ## Informações acadêmicas
 

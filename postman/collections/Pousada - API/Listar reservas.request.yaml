@@ -1,0 +1,16 @@
+$kind: http-request
+url: "{{baseUrl}}/reservas"
+method: GET
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status 200', () => pm.response.to.have.status(200));
+      pm.test('Retorna uma lista', () => pm.expect(pm.response.json()).to.be.an('array'));
+      pm.test('Cada reserva traz número do quarto e nome do hóspede', () => {
+          pm.response.json().forEach(r => {
+              pm.expect(r).to.have.property('quarto_numero');
+              pm.expect(r).to.have.property('hospede_nome');
+          });
+      });
+    language: text/javascript
+order: 1000

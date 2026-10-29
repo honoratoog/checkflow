@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{baseUrl}}/quartos?tipo=casal"
+method: GET
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status 200', () => pm.response.to.have.status(200));
+      const body = pm.response.json();
+      pm.test('Retorna quartos filtrados com informação de diária', () => {
+          pm.expect(body).to.be.an('array');
+          body.forEach(q => {
+              pm.expect(q.tipo.toLowerCase()).to.include('casal');
+              pm.expect(q.diaria_base).to.be.a('number');
+              pm.expect(q.diaria_base).to.be.above(0);
+          });
+      });
+    language: text/javascript
+order: 4450

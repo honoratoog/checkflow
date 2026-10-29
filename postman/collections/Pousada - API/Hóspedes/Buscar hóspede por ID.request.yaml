@@ -1,0 +1,15 @@
+$kind: http-request
+url: "{{baseUrl}}/hospedes/{{hospedeId}}"
+method: GET
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status 200', () => pm.response.to.have.status(200));
+      const body = pm.response.json();
+      pm.test('Retorna o hóspede correspondente ao ID', () => {
+          pm.expect(body.id).to.eql(pm.collectionVariables.get('hospedeId'));
+          pm.expect(body).to.have.property('nome');
+          pm.expect(body).to.have.property('documento');
+      });
+    language: text/javascript
+order: 3200

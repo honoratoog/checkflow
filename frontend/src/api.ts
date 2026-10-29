@@ -5,6 +5,8 @@ export type Quarto = {
     numero: string;
     tipo: string;
     status: "Livre" | "Ocupado" | "Limpeza Pendente";
+    // Ainda não retornada pela API; campo previsto em MODELO-DOMINIO.md para quando o backend implementar precificação (N2/N3).
+    diariaBase?: number;
 };
 
 export type Hospede = {
@@ -24,6 +26,15 @@ export type Reserva = {
     // Ainda não retornada pela API; campo previsto para quando o backend passar a registrar a data de checkout.
     data_checkout?: string;
     status: "Reservado" | "Em andamento" | "Finalizado";
+};
+
+// Recurso ainda não implementado no backend (MODELO-DOMINIO.md prevê ConsumoMinibar, escopo N2/N3).
+export type ConsumoMinibar = {
+    id: number;
+    reserva_id: number;
+    item: string;
+    quantidade: number;
+    valor_unitario: number;
 };
 
 async function request(path: string, options?: RequestInit) {
@@ -55,6 +66,9 @@ export const api = {
     listarHospedes: (): Promise<Hospede[]> => request("/hospedes"),
     criarHospede: (nome: string, documento: string, telefone: string) =>
         request("/hospedes", { method: "POST", body: JSON.stringify({ nome, documento, telefone }) }),
+    // Rota ainda não implementada no backend (débito técnico registrado no Handoff).
+    editarHospede: (id: number, nome: string, documento: string, telefone: string) =>
+        request(`/hospedes/${id}`, { method: "PUT", body: JSON.stringify({ nome, documento, telefone }) }),
     excluirHospede: (id: number) => request(`/hospedes/${id}`, { method: "DELETE" }),
 
     listarReservas: (): Promise<Reserva[]> => request("/reservas"),
@@ -63,4 +77,12 @@ export const api = {
     checkin: (id: number) => request(`/reservas/${id}/checkin`, { method: "POST" }),
     checkout: (id: number) => request(`/reservas/${id}/checkout`, { method: "POST" }),
     excluirReserva: (id: number) => request(`/reservas/${id}`, { method: "DELETE" }),
+
+    listarConsumosMinibar: (reserva_id: number): Promise<ConsumoMinibar[]> => request(`/reservas/${reserva_id}/consumos`),
+    lancarConsumoMinibar: (reserva_id: number, item: string, quantidade: number, valor_unitario: number) =>
+        request(`/reservas/${reserva_id}/consumos`, {
+            method: "POST",
+            body: JSON.stringify({ item, quantidade, valor_unitario }),
+        }),
+    excluirConsumoMinibar: (id: number) => request(`/consumos/${id}`, { method: "DELETE" }),
 };
