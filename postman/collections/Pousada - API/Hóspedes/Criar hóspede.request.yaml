@@ -13,7 +13,21 @@ body:
     }
 scripts:
   - type: beforeRequest
-    code: pm.collectionVariables.set('documentoHospede', 'CPF' + Date.now());
+    code: |-
+      function gerarCpfValido() {
+          const digits = Array.from({ length: 9 }, () => Math.floor(Math.random() * 9));
+          let s = 0;
+          for (let i = 0; i < 9; i++) s += digits[i] * (10 - i);
+          let r = (s * 10) % 11;
+          const d1 = r === 10 || r === 11 ? 0 : r;
+          s = 0;
+          for (let i = 0; i < 9; i++) s += digits[i] * (11 - i);
+          s += d1 * 2;
+          r = (s * 10) % 11;
+          const d2 = r === 10 || r === 11 ? 0 : r;
+          return [...digits, d1, d2].join('');
+      }
+      pm.collectionVariables.set('documentoHospede', gerarCpfValido());
     language: text/javascript
   - type: afterResponse
     code: |-

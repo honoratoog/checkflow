@@ -1,0 +1,28 @@
+$kind: http-request
+url: "{{baseUrl}}/hospedes"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "nome": "Hóspede Documento RG",
+      "documento": "{{documentoRgHospede}}",
+      "tipo_documento": "RG"
+    }
+scripts:
+  - type: beforeRequest
+    code: pm.collectionVariables.set('documentoRgHospede', 'RG' + Math.floor(100000 + Math.random() * 900000) + 'X');
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test('Status 201', () => pm.response.to.have.status(201));
+      const body = pm.response.json();
+      pm.test('Retorna hóspede com RG cadastrado', () => {
+          pm.expect(body.tipo_documento).to.eql('RG');
+          pm.expect(body.documento).to.include('RG');
+      });
+      pm.collectionVariables.set('hospedeRgId', body.id);
+    language: text/javascript
+order: 2300

@@ -1,0 +1,76 @@
+$kind: http-request
+url: "{{baseUrl}}/reservas/{{reservaMinibarId}}/consumos"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "item": "Água Mineral 500ml",
+      "quantidade": 2,
+      "valor_unitario": 6.00
+    }
+scripts:
+  - type: beforeRequest
+    code: |-
+      const sufixo = Date.now();
+      const quartoNum = 'MB' + sufixo;
+      const doc = 'DOC' + sufixo;
+      const baseUrl = pm.variables.get('baseUrl');
+
+      // 1. Cria quarto
+      pm.sendRequest({
+          url: baseUrl + '/quartos',
+          method: 'POST',
+          header: { 'Content-Type': 'application/json' },
+          body: { mode: 'raw', raw: JSON.stringify({ numero: quartoNum, tipo: 'Solteiro' }) }
+      }, (err, resQuarto) => {
+          if (err) return;
+          const quartoId = resQuarto.json().id;
+          pm.collectionVariables.set('quartoMinibarId', quartoId);
+
+          // 2. Cria hóspede
+          pm.sendRequest({
+              url: baseUrl + '/hospedes',
+              method: 'POST',
+              header: { 'Content-Type': 'application/json' },
+              body: { mode: 'raw', raw: JSON.stringify({ nome: 'Hospede Minibar', documento: doc }) }
+          }, (errH, resHospede) => {
+              if (errH) return;
+              const hospedeId = resHospede.json().id;
+              pm.collectionVariables.set('hospedeMinibarId', hospedeId);
+
+              // 3. Cria reserva
+              pm.sendRequest({
+                  url: baseUrl + '/reservas',
+                  method: 'POST',
+                  header: { 'Content-Type': 'application/json' },
+                  body: { mode: 'raw', raw: JSON.stringify({ quarto_id: quartoId, hospede_id: hospedeId, data_checkin: '2026-10-21' }) }
+              }, (errR, resReserva) => {
+                  if (errR) return;
+                  const reservaId = resReserva.json().id;
+                  pm.collectionVariables.set('reservaMinibarId', reservaId);
+
+                  // 4. Realiza check-in para que a reserva fique 'Em andamento'
+                  pm.sendRequest({
+                      url: baseUrl + '/reservas/' + reservaId + '/checkin',
+                      method: 'POST'
+                  });
+              });
+          });
+      });
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test('Status 201', () => pm.response.to.have.status(201));
+      const body = pm.response.json();
+      pm.test('Retorna dados do consumo lançado', () => {
+          pm.expect(body.item).to.eql('Água Mineral 500ml');
+          pm.expect(body.quantidade).to.eql(2);
+          pm.expect(body.valor_unitario).to.eql(6);
+          pm.expect(body.id).to.be.a('number');
+      });
+      pm.collectionVariables.set('consumoMinibarId', body.id);
+    language: text/javascript
+order: 8100

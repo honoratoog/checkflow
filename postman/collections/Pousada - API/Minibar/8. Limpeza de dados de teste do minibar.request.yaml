@@ -1,0 +1,15 @@
+$kind: http-request
+url: "{{baseUrl}}/reservas/{{reservaMinibarId}}"
+method: DELETE
+scripts:
+  - type: afterResponse
+    code: |-
+      const baseUrl = pm.variables.get('baseUrl');
+      const quartoId = pm.collectionVariables.get('quartoMinibarId');
+      const hospedeId = pm.collectionVariables.get('hospedeMinibarId');
+      if (quartoId) pm.sendRequest({ url: baseUrl + '/quartos/' + quartoId, method: 'DELETE' });
+      if (hospedeId) pm.sendRequest({ url: baseUrl + '/hospedes/' + hospedeId, method: 'DELETE' });
+      const resPendId = pm.collectionVariables.get('reservaPendenteMinibarId');
+      if (resPendId) pm.sendRequest({ url: baseUrl + '/reservas/' + resPendId, method: 'DELETE' });
+    language: text/javascript
+order: 8800

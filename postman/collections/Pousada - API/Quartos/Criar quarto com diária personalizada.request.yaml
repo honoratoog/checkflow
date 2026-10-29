@@ -1,0 +1,29 @@
+$kind: http-request
+url: "{{baseUrl}}/quartos"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "numero": "{{quartoDiariaNumero}}",
+      "tipo": "Casal com varanda",
+      "diaria_base": 250
+    }
+scripts:
+  - type: beforeRequest
+    code: pm.collectionVariables.set('quartoDiariaNumero', 'QD_' + Date.now());
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test('Status 201', () => pm.response.to.have.status(201));
+      const body = pm.response.json();
+      pm.test('Retorna o quarto criado com diária personalizada', () => {
+          pm.expect(body.numero).to.eql(pm.collectionVariables.get('quartoDiariaNumero'));
+          pm.expect(body.diaria_base).to.eql(250);
+          pm.expect(body.diariaBase).to.eql(250);
+      });
+      pm.collectionVariables.set('quartoDiariaId', body.id);
+    language: text/javascript
+order: 4150

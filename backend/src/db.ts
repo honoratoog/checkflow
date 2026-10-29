@@ -1,4 +1,5 @@
 import Database from "better-sqlite3";
+import { obterDiariaPadrao } from "./utils/precos";
 
 export const db = new Database("pousada.db");
 
@@ -9,14 +10,16 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     numero TEXT NOT NULL UNIQUE,
     tipo TEXT NOT NULL,
-    status TEXT NOT NULL DEFAULT 'Livre'
+    status TEXT NOT NULL DEFAULT 'Livre',
+    diaria_base REAL
   );
 
   CREATE TABLE IF NOT EXISTS hospedes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     nome TEXT NOT NULL,
     documento TEXT NOT NULL,
-    telefone TEXT
+    telefone TEXT,
+    tipo_documento TEXT
   );
 
   CREATE TABLE IF NOT EXISTS reservas (
@@ -37,3 +40,26 @@ db.exec(`
 
   CREATE INDEX IF NOT EXISTS idx_consumos_minibar_reserva ON consumos_minibar(reserva_id);
 `);
+
+// Migração para adicionar diaria_base em bancos que já possuíam a tabela quartos
+const colunasQuartos = db.prepare("PRAGMA table_info(quartos)").all() as { name: string }[];
+if (!colunasQuartos.some((c) => c.name === "diaria_base")) {
+    db.exec("ALTER TABLE quartos ADD COLUMN diaria_base REAL");
+}
+
+// Migração para adicionar tipo_documento em hospedes
+const colunasHospedes = db.prepare("PRAGMA table_info(hospedes)").all() as { name: string }[];
+if (!colunasHospedes.some((c) => c.name === "tipo_documento")) {
+    db.exec("ALTER TABLE hospedes ADD COLUMN tipo_documento TEXT");
+}
+
+// Preenche diaria_base de quartos pré-existentes sem valor
+const quartosSemDiaria = db
+    .prepare("SELECT id, tipo FROM quartos WHERE diaria_base IS NULL")
+    .all() as { id: number; tipo: string }[];
+
+for (const q of quartosSemDiaria) {
+    const diaria = obterDiariaPadrao(q.tipo) ?? 120;
+    db.prepare("UPDATE quartos SET diaria_base = ? WHERE id = ?").run(diaria, q.id);
+}
+
