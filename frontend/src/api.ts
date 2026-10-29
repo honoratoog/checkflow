@@ -65,8 +65,8 @@ export const api = {
     listarQuartos: (): Promise<Quarto[]> => request("/quartos"),
     // Hoje a rota "/resumo" é capturada por "/:id" no backend (registrada antes) e retorna erro. Não usar até corrigirem a ordem das rotas.
     obterResumoQuartos: (): Promise<ResumoQuartos> => request("/quartos/resumo"),
-    criarQuarto: (numero: string, tipo: string) =>
-        request("/quartos", { method: "POST", body: JSON.stringify({ numero, tipo }) }),
+    criarQuarto: (numero: string, tipo: string, diaria_base: number) =>
+        request("/quartos", { method: "POST", body: JSON.stringify({ numero, tipo, diaria_base }) }),
     finalizarLimpeza: (id: number) => request(`/quartos/${id}/limpeza`, { method: "PATCH" }),
     excluirQuarto: (id: number) => request(`/quartos/${id}`, { method: "DELETE" }),
 
