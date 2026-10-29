@@ -1,7 +1,47 @@
 import { Router } from "express";
 import { db } from "../db";
+import { calcularDiasHospedado, calcularExtratoReserva } from "../utils/estadia";
 
 export const reservasRouter = Router();
+
+function enriquecerReservaComValores(r: any) {
+    if (!r) return null;
+    const totalConsumos = Number(r.total_consumos) || 0;
+    const diariaBase = r.diaria_base !== null && r.diaria_base !== undefined ? Number(r.diaria_base) : null;
+
+    if (r.status === "Reservado" || (r.status === "Finalizado" && !r.data_checkout)) {
+        return {
+            ...r,
+            diaria_base: diariaBase,
+            total_consumos: totalConsumos,
+            subtotal_diarias: null,
+            valor_total: null,
+        };
+    }
+
+    if (diariaBase === null) {
+        return {
+            ...r,
+            diaria_base: null,
+            total_consumos: totalConsumos,
+            subtotal_diarias: null,
+            valor_total: null,
+        };
+    }
+
+    const dias = calcularDiasHospedado(r.data_checkin, r.data_checkout);
+    const subtotalDiarias = dias * diariaBase;
+    const valorTotal = subtotalDiarias + totalConsumos;
+
+    return {
+        ...r,
+        diaria_base: diariaBase,
+        dias_hospedado: dias,
+        total_consumos: totalConsumos,
+        subtotal_diarias: subtotalDiarias,
+        valor_total: valorTotal,
+    };
+}
 
 reservasRouter.get("/", (req, res) => {
     const { quarto, hospede, checkin, checkout, status } = req.query;
@@ -36,7 +76,12 @@ reservasRouter.get("/", (req, res) => {
 
     const whereClause = condicoes.length > 0 ? `WHERE ${condicoes.join(" AND ")}` : "";
     const sql = `
-        SELECT reservas.*, quartos.numero AS quarto_numero, hospedes.nome AS hospede_nome
+        SELECT reservas.*,
+               quartos.numero AS quarto_numero,
+               quartos.tipo AS quarto_tipo,
+               quartos.diaria_base,
+               hospedes.nome AS hospede_nome,
+               COALESCE((SELECT SUM(c.quantidade * c.valor_unitario) FROM consumos_minibar c WHERE c.reserva_id = reservas.id), 0) AS total_consumos
         FROM reservas
         JOIN quartos ON quartos.id = reservas.quarto_id
         JOIN hospedes ON hospedes.id = reservas.hospede_id
@@ -45,7 +90,7 @@ reservasRouter.get("/", (req, res) => {
     `;
 
     const reservas = db.prepare(sql).all(...params);
-    res.json(reservas);
+    res.json(reservas.map(enriquecerReservaComValores));
 });
 
 reservasRouter.get("/:id", (req, res) => {
@@ -57,7 +102,12 @@ reservasRouter.get("/:id", (req, res) => {
 
     const reserva = db
         .prepare(`
-            SELECT reservas.*, quartos.numero AS quarto_numero, hospedes.nome AS hospede_nome
+            SELECT reservas.*,
+                   quartos.numero AS quarto_numero,
+                   quartos.tipo AS quarto_tipo,
+                   quartos.diaria_base,
+                   hospedes.nome AS hospede_nome,
+                   COALESCE((SELECT SUM(c.quantidade * c.valor_unitario) FROM consumos_minibar c WHERE c.reserva_id = reservas.id), 0) AS total_consumos
             FROM reservas
             JOIN quartos ON quartos.id = reservas.quarto_id
             JOIN hospedes ON hospedes.id = reservas.hospede_id
@@ -69,7 +119,57 @@ reservasRouter.get("/:id", (req, res) => {
         return res.status(404).json({ error: "Reserva não encontrada" });
     }
 
-    res.json(reserva);
+    res.json(enriquecerReservaComValores(reserva));
+});
+
+reservasRouter.get("/:id/extrato", (req, res) => {
+    const { id } = req.params;
+
+    if (!/^\d+$/.test(id)) {
+        return res.status(400).json({ error: "ID de reserva deve ser numérico" });
+    }
+
+    const reserva = db
+        .prepare(`
+            SELECT reservas.*,
+                   quartos.numero AS quarto_numero,
+                   quartos.tipo AS quarto_tipo,
+                   quartos.diaria_base,
+                   hospedes.nome AS hospede_nome
+            FROM reservas
+            JOIN quartos ON quartos.id = reservas.quarto_id
+            JOIN hospedes ON hospedes.id = reservas.hospede_id
+            WHERE reservas.id = ?
+        `)
+        .get(id) as any;
+
+    if (!reserva) {
+        return res.status(404).json({ error: "Reserva não encontrada" });
+    }
+
+    const consumos = db
+        .prepare("SELECT * FROM consumos_minibar WHERE reserva_id = ? ORDER BY id ASC")
+        .all(id) as any[];
+
+    const calculo = calcularExtratoReserva({
+        data_checkin: reserva.data_checkin,
+        data_checkout: reserva.data_checkout,
+        diaria_base: reserva.diaria_base,
+        consumos,
+    });
+
+    res.json({
+        reserva_id: reserva.id,
+        quarto_id: reserva.quarto_id,
+        quarto_numero: reserva.quarto_numero,
+        quarto_tipo: reserva.quarto_tipo,
+        hospede_id: reserva.hospede_id,
+        hospede_nome: reserva.hospede_nome,
+        status: reserva.status,
+        data_checkin: reserva.data_checkin,
+        data_checkout: reserva.data_checkout,
+        ...calculo,
+    });
 });
 
 reservasRouter.post("/", (req, res) => {
@@ -247,4 +347,3 @@ reservasRouter.post("/:id/consumos", (req, res) => {
         valor_unitario: valor,
     });
 });
-

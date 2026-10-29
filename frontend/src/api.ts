@@ -29,9 +29,13 @@ export type Reserva = {
     quarto_numero: string;
     hospede_nome: string;
     data_checkin: string;
-    // Ainda não retornada pela API; campo previsto para quando o backend passar a registrar a data de checkout.
-    data_checkout?: string;
+    data_checkout?: string | null;
     status: "Reservado" | "Em andamento" | "Finalizado";
+    diaria_base?: number | null;
+    dias_hospedado?: number | null;
+    total_consumos?: number | null;
+    subtotal_diarias?: number | null;
+    valor_total?: number | null;
 };
 
 export type ConsumoMinibar = {
@@ -40,6 +44,32 @@ export type ConsumoMinibar = {
     item: string;
     quantidade: number;
     valor_unitario: number;
+};
+
+export type ItemConsumoExtrato = {
+    id?: number;
+    item: string;
+    quantidade: number;
+    valor_unitario: number;
+    subtotal: number;
+};
+
+export type ExtratoReserva = {
+    reserva_id: number;
+    quarto_id: number;
+    quarto_numero: string;
+    quarto_tipo?: string;
+    hospede_id: number;
+    hospede_nome: string;
+    status: "Reservado" | "Em andamento" | "Finalizado";
+    data_checkin: string;
+    data_checkout?: string | null;
+    dias_hospedado: number;
+    diaria: number;
+    subtotal_diarias: number;
+    consumos: ItemConsumoExtrato[];
+    total_consumos: number;
+    total_a_pagar: number;
 };
 
 async function request(path: string, options?: RequestInit) {
@@ -78,6 +108,7 @@ export const api = {
     excluirHospede: (id: number) => request(`/hospedes/${id}`, { method: "DELETE" }),
 
     listarReservas: (): Promise<Reserva[]> => request("/reservas"),
+    obterExtrato: (id: number): Promise<ExtratoReserva> => request(`/reservas/${id}/extrato`),
     criarReserva: (quarto_id: number, hospede_id: number, data_checkin: string) =>
         request("/reservas", { method: "POST", body: JSON.stringify({ quarto_id, hospede_id, data_checkin }) }),
     checkin: (id: number) => request(`/reservas/${id}/checkin`, { method: "POST" }),
